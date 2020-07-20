@@ -91,6 +91,12 @@ export default {
       /* eslint-disable-next-line */
       console.log('resp rxd:', resp)
     })
+
+    this.tsSocket = this.$nuxtSocket({ channel: '/newfile' })
+    this.tsSocket.emit('hi', {}, (resp) => {
+      /* eslint-disable-next-line */
+      console.log('resp2 rxd:', resp)
+    })
   }
 }
 </script>
