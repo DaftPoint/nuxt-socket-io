@@ -83,6 +83,14 @@ import Messages from '@/components/Messages.vue'
 export default {
   components: {
     Messages
+  },
+  mounted() {
+    // RES: added working example:
+    this.socket = this.$nuxtSocket({})
+    this.socket.emit('echo', { data: 123 }, (resp) => {
+      /* eslint-disable-next-line */
+      console.log('resp rxd:', resp)
+    })
   }
 }
 </script>

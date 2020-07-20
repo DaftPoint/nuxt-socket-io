@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /* eslint-disable standard/no-callback-literal */
 /*
  * Copyright 2020 Richard Schloss (https://github.com/richardeschloss/nuxt-socket-io)
@@ -5,7 +6,7 @@
 
 import http from 'http'
 import { existsSync } from 'fs'
-import { resolve as pResolve } from 'path'
+import { resolve as pResolve, parse as pParse } from 'path'
 import { promisify } from 'util'
 import consola from 'consola'
 import socketIO from 'socket.io'
@@ -34,7 +35,10 @@ const register = {
   },
   nspSvc(io, nspDir) {
     return new Promise(async (resolve, reject) => {
-      const nspFiles = await glob(`${nspDir}/**/*.js`)
+      // RES: updated extension to include ts
+      const nspFiles = await glob(`${nspDir}/**/*.{js,ts}`)
+      // RES: nspFiles
+      console.log({ nspFiles })
       const namespaces = nspFiles.map((f) => f.split(nspDir)[1].split('.js')[0])
       namespaces.forEach(async (namespace, idx) => {
         const { default: Svc } = await import(nspFiles[idx])
@@ -70,10 +74,22 @@ const register = {
       host = 'localhost',
       port = 3000
     } = options
-    const ioSvcFull = pResolve(ioSvc.endsWith('.js') ? ioSvc : ioSvc + '.js')
-    const nspDirFull = pResolve(
-      nspDir.endsWith('.js') ? nspDir.substr(nspDir.length - 3) : nspDir
+
+    const { ext: ioSvcExt } = pParse(ioSvc)
+    const { ext: nspDirExt } = pParse(ioSvc)
+    console.log('ext:', ioSvcExt)
+    // RES: attempting to resolve files with .ts extension
+    const ioSvcFull = pResolve(
+      ['.js', '.ts'].includes(ioSvcExt) ? ioSvc : ioSvc + '.js'
     )
+    const nspDirFull = pResolve(
+      ['.js', '.ts'].includes(nspDirExt)
+        ? nspDir.substr(nspDir.length - 3)
+        : nspDir
+    )
+
+    // RES: displays registered services, errors will be output to console.
+    console.log({ ioSvcFull, nspDirFull })
     const io = socketIO(server)
     const svcs = { ioSvc: ioSvcFull, nspSvc: nspDirFull }
     const p = []
@@ -113,6 +129,8 @@ export default function nuxtSocketIO(moduleOptions) {
 
   if (options.server !== false) {
     this.nuxt.hook('listen', async (server = http.createServer()) => {
+      // RES added console statement:
+      console.log('NUXT HOOK: LISTENING')
       await register.server(options.server, server).catch(consola.error)
       this.nuxt.hook('close', () => server.close())
     })
